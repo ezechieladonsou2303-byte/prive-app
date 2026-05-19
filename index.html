@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔒 Privé</title>
+</head>
+<body style="margin:0; font-family: Arial; background-color: #ffffff;">
+
+  <!-- Ecran mot de passe -->
+  <div id="ecranMdp" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background-color:#ffffff; color:black;">
+    <h2 style="color:#FF0000;">🔒 Privé</h2>
+    <p style="color:black;">Entrez le code secret</p>
+    <input id="mdp" type="password" placeholder="Code secret..." style="padding:10px; border-radius:20px; border:2px solid #FFD700; margin-bottom:10px; width:200px; text-align:center; background-color:#ffffff; color:black;">
+    <button onclick="verifierMdp()" style="padding:10px 30px; background-color:#FF0000; color:white; border:none; border-radius:20px;">Entrer</button>
+    <p id="erreurMdp" style="color:#FF0000;"></p>
+  </div>
+
+  <!-- Application principale -->
+  <div id="appPrincipale" style="display:none;">
+
+    <!-- Liste des contacts -->
+    <div id="listeContacts" style="background-color:#ffffff; color:black; height:100vh; overflow-y:scroll;">
+      <div style="padding:15px; background-color:#FF0000; display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0; color:#ffffff;">🔒 Privé</h2>
+        <button onclick="afficherAjoutContact()" style="background-color:#FFD700; border:none; color:black; padding:8px 15px; border-radius:20px; font-weight:bold;">+ Contact</button>
+      </div>
+
+      <!-- Bordure jaune -->
+      <div style="height:4px; background-color:#FFD700;"></div>
+
+      <!-- Formulaire ajout contact -->
+      <div id="formulaireContact" style="display:none; padding:15px; background-color:#fff8e1; border-bottom:2px solid #FFD700;">
+        <input id="nouveauContact" type="text" placeholder="Nom du contact..." style="padding:10px; border-radius:20px; border:2px solid #FFD700; width:60%; background-color:#ffffff; color:black;">
+        <button onclick="ajouterContact()" style="padding:10px 15px; background-color:#FF0000; color:white; border:none; border-radius:20px;">Ajouter</button>
+      </div>
+
+      <div id="listeContactsDiv"></div>
+    </div>
+
+    <!-- Ecran de chat -->
+    <div id="ecranChat" style="display:none; flex-direction:column; height:100vh;">
+      <!-- Header -->
+      <div style="background-color:#FF0000; padding:15px; color:white; display:flex; align-items:center; gap:10px;">
+        <button onclick="retourContacts()" style="background:none; border:none; color:#FFD700; font-size:20px;">←</button>
+        <h3 id="nomContact" style="margin:0; flex:1; color:white;"></h3>
+        <button onclick="supprimerContact()" style="background:none; border:none; color:#FFD700; font-size:20px;">🗑️</button>
+      </div>
+
+      <!-- Bordure jaune -->
+      <div style="height:4px; background-color:#FFD700;"></div>
+
+      <!-- Messages -->
+      <div id="messages" style="background-color:#ffffff; flex:1; padding:15px; overflow-y:scroll; height:calc(100vh - 130px);">
+      </div>
+
+      <!-- Zone écriture -->
+      <div style="border-top:4px solid #FFD700; background-color:#ffffff; padding:10px; display:flex; gap:10px;">
+        <input id="monMessage" type="text" placeholder="Écrire un message..."
+          style="flex:1; padding:10px; border-radius:20px; border:2px solid #FFD700; background-color:#ffffff; color:black;">
+        <button onclick="envoyer()"
+          style="padding:10px 20px; background-color:#FF0000; color:white; border:none; border-radius:20px; font-weight:bold;">
+          ➤
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let contactActuel = "";
+    const MOT_DE_PASSE = "2303";
+
+    function verifierMdp() {
+      let mdp = document.getElementById("mdp").value;
+      if (mdp === MOT_DE_PASSE) {
+        document.getElementById("ecranMdp").style.display = "none";
+        document.getElementById("appPrincipale").style.display = "block";
+        afficherContacts();
+      } else {
+        document.getElementById("erreurMdp").innerText = "Code incorrect !";
+      }
+    }
+
+    function afficherContacts() {
+      let contacts = JSON.parse(localStorage.getItem("contacts") || "[]");
+      let div = document.getElementById("listeContactsDiv");
+      div.innerHTML = "";
+      contacts.forEach(function(contact) {
+        div.innerHTML += `
+          <div onclick="ouvrirChat('${contact}')" 
+            style="padding:15px; border-bottom:2px solid #FFD700; cursor:pointer; display:flex; align-items:center; gap:10px; color:black;">
+            👤 ${contact}
+          </div>`;
+      });
+    }
+
+    function afficherAjoutContact() {
+      let f = document.getElementById("formulaireContact");
+      f.style.display = f.style.display === "none" ? "block" : "none";
+    }
+
+    function ajouterContact() {
+      let nom = document.getElementById("nouveauContact").value.trim();
+      if (nom === "") return;
+      let contacts = JSON.parse(localStorage.getItem("contacts") || "[]");
+      contacts.push(nom);
+      localStorage.setItem("contacts", JSON.stringify(contacts));
+      document.getElementById("nouveauContact").value = "";
+      document.getElementById("formulaireContact").style.display = "none";
+      afficherContacts();
+    }
+
+    function supprimerContact() {
+      let contacts = JSON.parse(localStorage.getItem("contacts") || "[]");
+      contacts = contacts.filter(c => c !== contactActuel);
+      localStorage.setItem("contacts", JSON.stringify(contacts));
+      localStorage.removeItem("messages_" + contactActuel);
+      retourContacts();
+      afficherContacts();
+    }
+
+    function ouvrirChat(contact) {
+      contactActuel = contact;
+      document.getElementById("nomContact").innerText = "👤 " + contact;
+      document.getElementById("listeContacts").style.display = "none";
+      document.getElementById("ecranChat").style.display = "flex";
+      let sauvegardes = localStorage.getItem("messages_" + contact);
+      document.getElementById("messages").innerHTML = sauvegardes || "";
+    }
+
+    function retourContacts() {
+      document.getElementById("ecranChat").style.display = "none";
+      document.getElementById("listeContacts").style.display = "block";
+    }
+
+    function envoyer() {
+      let message = document.getElementById("monMessage").value;
+      if (message === "") return;
+
+      let now = new Date();
+      let heure = now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
+
+      let zone = document.getElementById("messages");
+      zone.innerHTML += `
+        <div style="text-align:right; margin:10px;">
+          <span style="background-color:#FFD700; color:black; padding:10px; border-radius:10px; display:inline-block; max-width:70%;">
+            ${message}
+            <br><small style="color:#FF0000;">${heure}</small>
+          </span>
+        </div>`;
+
+      localStorage.setItem("messages_" + contactActuel, zone.innerHTML);
+      document.getElementById("monMessage").value = "";
+      zone.scrollTop = zone.scrollHeight;
+    }
+  </script>
+
+</body>
+</html>
